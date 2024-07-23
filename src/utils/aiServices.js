@@ -2,7 +2,7 @@ import axios from 'axios';
 import { resizeImage } from './imageUtils';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const OLLAMA_API_URL = '/api/generate';
+const OLLAMA_API_URL = '/ollama';
 const BACKEND_URL = 'http://localhost:5000';
 
 export const analyzeImage = async (imageData, model, prompt, context = '') => {
@@ -20,7 +20,7 @@ export const analyzeImage = async (imageData, model, prompt, context = '') => {
   }
 };
 
-export const chatWithAI = async (model, prompt, context = '', ollamaModel = 'llama2') => {
+export const chatWithAI = async (model, prompt, context = '', ollamaModel = 'llama3') => {
   switch (model) {
     case 'openai':
       return chatWithOpenAI(prompt, context);
@@ -50,7 +50,7 @@ const analyzeWithOpenAI = async (imageData, prompt, context) => {
       }
     ];
     const response = await axios.post(OPENAI_API_URL, {
-      model: imageData ? "gpt-4-vision-preview" : "gpt-4",
+      model: imageData ? "gpt-4o" : "gpt-4o-mini",
       messages: messages,
       max_tokens: 500
     }, {
@@ -93,33 +93,44 @@ const chatWithAnthropic = async (prompt, context) => {
 
 export const analyzeWithOllama = async (imageData, prompt, context, model = 'llava') => {
   try {
-    console.log('Sending request to Ollama');
+    console.log('Sending request to Ollama:', `${OLLAMA_API_URL}/api/generate`);
     const requestBody = {
       model: model,
       prompt: `${context}\n\nHuman: ${prompt}\n\nAssistant:`,
       stream: false,
     };
+
     if (imageData) {
       requestBody.images = [imageData.split(',')[1]];
     }
-    const response = await axios.post(OLLAMA_API_URL, requestBody);
+
+    const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, requestBody);
    
     console.log('Ollama response:', response.data);
     return response.data.response;
   } catch (error) {
-    console.error('Error with Ollama:', error);
+    console.error('Error analyzing with Ollama:', error);
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+      console.error('Error headers:', error.response.headers);
+    } else if (error.request) {
+      console.error('Error request:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
     throw error;
   }
 };
 
 export const getOllamaModels = async () => {
   try {
-    const response = await axios.get('/api/tags');
+    console.log('Fetching Ollama models from:', `${OLLAMA_API_URL}/api/tags`);
+    const response = await axios.get(`${OLLAMA_API_URL}/api/tags`);
     console.log('Ollama models response:', response.data);
     if (Array.isArray(response.data.models)) {
       return response.data.models;
     } else if (typeof response.data.models === 'object') {
-      // If the response is an object, convert it to an array of objects
       return Object.entries(response.data.models).map(([name, details]) => ({
         name,
         ...details
@@ -130,6 +141,15 @@ export const getOllamaModels = async () => {
     }
   } catch (error) {
     console.error('Error fetching Ollama models:', error);
-    return [];
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      console.error('Error status:', error.response.status);
+      console.error('Error headers:', error.response.headers);
+    } else if (error.request) {
+      console.error('Error request:', error.request);
+    } else {
+      console.error('Error message:', error.message);
+    }
+    throw error;
   }
 };

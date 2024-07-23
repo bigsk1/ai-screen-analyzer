@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  ai-screen-analyzer:
+    build: .
+    ports:
+      - "3000:3000"
+      - "5000:5000"
+    environment:
+      - REACT_APP_OPENAI_API_KEY=${REACT_APP_OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL}
+      - OLLAMA_API_URL=http://host.docker.internal:11434
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
