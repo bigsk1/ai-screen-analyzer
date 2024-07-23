@@ -13,54 +13,26 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://host.docker.internal:11434';
 
-console.log('OLLAMA_API_URL:', OLLAMA_API_URL);
-
-// Logging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
-
 // Ollama routes
 app.get('/ollama/api/tags', async (req, res) => {
-  console.log('Received request for /ollama/api/tags');
   try {
     const response = await axios.get(`${OLLAMA_API_URL}/api/tags`);
-    console.log('Ollama response:', response.data);
     res.json(response.data);
   } catch (error) {
-    console.error('Error fetching Ollama tags:', error);
-    res.status(500).json({ error: 'Failed to fetch Ollama tags', details: error.message });
+    console.error('Error fetching Ollama tags:', error.message);
+    res.status(500).json({ error: 'Failed to fetch Ollama tags' });
   }
 });
 
 app.post('/ollama/api/generate', async (req, res) => {
-  console.log('Received request for /ollama/api/generate');
   try {
-    console.log(`Sending request to Ollama: ${OLLAMA_API_URL}/api/generate`);
     const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, req.body);
-    console.log('Received response from Ollama');
     res.json(response.data);
   } catch (error) {
-    console.error('Error generating Ollama response:', error);
-    res.status(500).json({ error: 'Failed to generate Ollama response', details: error.message });
+    console.error('Error generating Ollama response:', error.message);
+    res.status(500).json({ error: 'Failed to generate Ollama response' });
   }
 });
-
-// Test route
-app.get('/test-ollama', async (req, res) => {
-  console.log('Received request for /test-ollama');
-  try {
-    console.log(`Sending request to Ollama: ${OLLAMA_API_URL}/api/tags`);
-    const response = await axios.get(`${OLLAMA_API_URL}/api/tags`);
-    console.log('Received response from Ollama:', response.data);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Error testing Ollama connection:', error);
-    res.status(500).json({ error: 'Failed to connect to Ollama', details: error.message });
-  }
-});
-
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20240620";
 

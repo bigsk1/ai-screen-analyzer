@@ -93,7 +93,6 @@ const chatWithAnthropic = async (prompt, context) => {
 
 export const analyzeWithOllama = async (imageData, prompt, context, model = 'llava') => {
   try {
-    console.log('Sending request to Ollama:', `${OLLAMA_API_URL}/api/generate`);
     const requestBody = {
       model: model,
       prompt: `${context}\n\nHuman: ${prompt}\n\nAssistant:`,
@@ -105,29 +104,16 @@ export const analyzeWithOllama = async (imageData, prompt, context, model = 'lla
     }
 
     const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, requestBody);
-   
-    console.log('Ollama response:', response.data);
     return response.data.response;
   } catch (error) {
-    console.error('Error analyzing with Ollama:', error);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-      console.error('Error status:', error.response.status);
-      console.error('Error headers:', error.response.headers);
-    } else if (error.request) {
-      console.error('Error request:', error.request);
-    } else {
-      console.error('Error message:', error.message);
-    }
+    console.error('Error analyzing with Ollama:', error.message);
     throw error;
   }
 };
 
 export const getOllamaModels = async () => {
   try {
-    console.log('Fetching Ollama models from:', `${OLLAMA_API_URL}/api/tags`);
     const response = await axios.get(`${OLLAMA_API_URL}/api/tags`);
-    console.log('Ollama models response:', response.data);
     if (Array.isArray(response.data.models)) {
       return response.data.models;
     } else if (typeof response.data.models === 'object') {
@@ -136,20 +122,11 @@ export const getOllamaModels = async () => {
         ...details
       }));
     } else {
-      console.error('Unexpected Ollama models response format:', response.data);
+      console.error('Unexpected Ollama models response format');
       return [];
     }
   } catch (error) {
-    console.error('Error fetching Ollama models:', error);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-      console.error('Error status:', error.response.status);
-      console.error('Error headers:', error.response.headers);
-    } else if (error.request) {
-      console.error('Error request:', error.request);
-    } else {
-      console.error('Error message:', error.message);
-    }
+    console.error('Error fetching Ollama models:', error.message);
     throw error;
   }
 };
