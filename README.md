@@ -22,7 +22,7 @@ You can capture any window or full screen ask OpenAI gpt-4o to describe anything
 - **Docker**: Run in docker because we all love docker.
 
 
-![ai-screen](https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/f51343f6-4b5a-44f3-1db5-318b2afda700/public)
+![ai-screen](https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/33c4e5b3-3722-403a-e877-b6906677e600/public)
 
 
 
