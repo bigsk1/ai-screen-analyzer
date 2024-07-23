@@ -25,13 +25,25 @@ You can capture any window or full screen ask OpenAI gpt-4o to describe anything
 ![ai-screen](https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/33c4e5b3-3722-403a-e877-b6906677e600/public)
 
 
+## Quick Start
+
+Docker:  Add your api keys in .env
+
+   ```bash
+   docker-compose up -d --build
+   ```
+
+visit http://localhost:3000
 
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 
-- Node.js (v18.0.0 or later)
-- Ollama (for local model support)
+- Node.js (v18.0.0 or later) or just run in docker only
+- OpenAI API key - if you plan on using openai
+- Anthropic API key - if you plan on using Claude models
+- Ollama  (OPTIONAL for local model support)
+- Docker  (OPTIONAL but recommended)
 
 ## Installation
 
