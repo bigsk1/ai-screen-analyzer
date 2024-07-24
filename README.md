@@ -113,6 +113,9 @@ docker-compose down
 - To change the default Anthropic model, update the `ANTHROPIC_MODEL` variable in your `.env` files.
 - If using `ollama` and your host if different then change in the .env, by default when running nativly using npm run dev it uses locahost:11434 and when running docker it uses host.docker.internal:11434 so no need to change in the .env
 
+![btc.png](https://imagedelivery.net/WfhVb8dSNAAvdXUdMfBuPQ/d9e7a714-c9aa-42d2-e4a8-988f62b07800/public)
+
+
 ## Contributing
 
 Contributions to the AI Screen Analyzer are welcome. Please follow these steps:
