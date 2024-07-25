@@ -52,7 +52,7 @@ const analyzeWithOpenAI = async (imageData, prompt, context) => {
     const response = await axios.post(OPENAI_API_URL, {
       model: imageData ? "gpt-4o" : "gpt-4o-mini",
       messages: messages,
-      max_tokens: 500
+      max_tokens: 2000
     }, {
       headers: {
         'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
