@@ -30,42 +30,19 @@ const prepareImageForAnalysis = async (imageData) => {
     img.src = imageData;
     await imgLoadPromise;
     
-    // Check if image is large enough
-    if (img.width >= 800 && img.height >= 600) {
-      return imageData;
+    // If image is small, resize it to ensure it's large enough for analysis
+    if (img.width < 512 || img.height < 512) {
+      return await resizeImage(imageData, 1024, 1024);
     }
     
-    // Create a canvas to resize the image
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Maintain aspect ratio but ensure minimum dimensions
-    const aspectRatio = img.width / img.height;
-    let newWidth = Math.max(800, img.width);
-    let newHeight = Math.max(600, img.height);
-    
-    // Adjust dimensions to maintain aspect ratio
-    if (newWidth / newHeight > aspectRatio) {
-      newWidth = Math.round(newHeight * aspectRatio);
-    } else {
-      newHeight = Math.round(newWidth / aspectRatio);
-    }
-    
-    canvas.width = newWidth;
-    canvas.height = newHeight;
-    
-    // Draw the image at the new size
-    ctx.drawImage(img, 0, 0, newWidth, newHeight);
-    
-    // Get the resized image as a data URL with high quality
-    return canvas.toDataURL('image/jpeg', 0.95);
+    return imageData;
   } catch (error) {
     console.error('Error preparing image:', error);
-    return imageData; // Return original if processing fails
+    return imageData; // Return original if resizing fails
   }
 };
 
-export const analyzeImage = async (imageData, modelType, customPrompt, context = '', ollamaModel = DEFAULT_OLLAMA_IMAGE_MODEL) => {
+const analyzeImage = async (imageData, modelType, customPrompt, context = '', ollamaModel = DEFAULT_OLLAMA_IMAGE_MODEL) => {
   console.log(`Analyzing image with ${modelType === 'openai' ? 'GPT-4o' : modelType === 'anthropic' ? 'Claude' : `Ollama (${ollamaModel})`} model and prompt: "${customPrompt}"`);
   
   try {
@@ -73,7 +50,7 @@ export const analyzeImage = async (imageData, modelType, customPrompt, context =
     const processedImage = await prepareImageForAnalysis(imageData);
     console.log('Image prepared for analysis');
     
-    // In a real implementation, call the actual API services
+    // Try actual API calls first
     if (modelType === 'openai') {
       try {
         return await analyzeWithOpenAI(processedImage, customPrompt, context);
@@ -99,12 +76,6 @@ export const analyzeImage = async (imageData, modelType, customPrompt, context =
     
     // Fallback to simulated response
     await delay(1500);
-    
-    // Parse context if provided
-    let contextInfo = '';
-    if (context && context.trim()) {
-      contextInfo = 'Based on our conversation: ' + context.substring(0, 100) + '...';
-    }
     
     // Check if it's a chart-related query
     const isChartQuery = customPrompt.toLowerCase().includes('chart') || 
@@ -157,8 +128,8 @@ Without more specific questions, I can only provide this general description. If
   }
 };
 
-export const chatWithAI = async (modelType, message, context = '', ollamaModel = '') => {
-  console.log(`Chatting with ${modelType} model${modelType === 'ollama' && ollamaModel ? ` (${ollamaModel})` : ''}`);
+const chatWithAI = async (modelType, message, context = '', ollamaModel = '') => {
+  console.log(`Chatting with ${modelType === 'openai' ? 'GPT-4o' : modelType === 'anthropic' ? 'Claude' : `Ollama (${ollamaModel})`} model`);
   
   try {
     // Try actual API calls first
@@ -188,11 +159,6 @@ export const chatWithAI = async (modelType, message, context = '', ollamaModel =
     // Simulate API delay
     await delay(800);
     
-    let contextInfo = '';
-    if (context && context.trim()) {
-      contextInfo = 'Based on our conversation: ' + context.substring(0, 100) + '...';
-    }
-    
     if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
       return `Hello! I'm a simulated AI assistant running as ${modelType === 'openai' ? 'GPT-4o' : modelType === 'anthropic' ? 'Claude' : `Ollama (${ollamaModel})`}. How can I assist you today?`;
     }
@@ -218,7 +184,7 @@ export const chatWithAI = async (modelType, message, context = '', ollamaModel =
 
 const analyzeWithOpenAI = async (imageData, prompt, context) => {
   if (!process.env.REACT_APP_OPENAI_API_KEY) {
-    throw new Error('OpenAI API key is not configured. You can still use Claude or Ollama models, or add your OpenAI API key in the .env file.');
+    throw new Error('OpenAI API key is not configured. You can add it to your .env file or switch to Claude or Ollama models.');
   }
   try {
     const messages = [
@@ -282,141 +248,172 @@ const chatWithAnthropic = async (prompt, context) => {
   return analyzeWithAnthropic(null, prompt, context);
 };
 
-export const analyzeWithOllama = async (imageData, prompt, context, model = DEFAULT_OLLAMA_IMAGE_MODEL) => {
+const analyzeWithOllama = async (imageData, prompt, context, model = DEFAULT_OLLAMA_IMAGE_MODEL) => {
   console.log(`Analyzing with Ollama model: ${model}`);
   
+  // Ensure we're using an image-capable model
+  if (imageData && !isImageCapableModel(model)) {
+    console.warn(`Model ${model} may not support image analysis. Falling back to ${DEFAULT_OLLAMA_IMAGE_MODEL}`);
+    model = DEFAULT_OLLAMA_IMAGE_MODEL;
+  }
+  
   try {
-    // Extract base64 data if it's a data URL
-    let imageBase64 = imageData;
-    if (imageData.startsWith('data:image')) {
+    // Extract base64 data if needed
+    let imageBase64 = null;
+    if (imageData && imageData.startsWith('data:')) {
       imageBase64 = imageData.split(',')[1];
+      console.log(`Extracted base64 image data (${imageBase64.length} chars)`);
     }
     
-    const requestBody = {
+    // Construct the request payload
+    const payload = {
       model: model,
-      prompt: `${context ? context + '\n\n' : ''}${prompt}`,
-      stream: false,
+      prompt: context ? `${context}\n\n${prompt}` : prompt,
+      stream: false
     };
-
+    
+    // Add images array if we have image data
     if (imageBase64) {
-      requestBody.images = [imageBase64];
+      payload.images = [imageBase64];
+      console.log('Added image to Ollama request payload');
     }
-
-    // Try the proxy API endpoint first
+    
+    // First, try to connect through the proxy
     try {
-      const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, requestBody);
+      console.log(`Sending request to proxy endpoint: ${BACKEND_URL}/ollama/api/generate`);
+      console.log(`Using model: ${model}, with image: ${!!imageBase64}`);
+      
+      const response = await axios.post(`${BACKEND_URL}/ollama/api/generate`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Received response from Ollama proxy');
       return response.data.response;
     } catch (proxyError) {
-      // If proxy fails, try direct connection
-      console.warn('Proxy connection failed, trying direct connection:', proxyError.message);
-      const directResponse = await axios.post('http://localhost:11434/api/generate', requestBody);
-      return directResponse.data.response;
+      console.warn('Proxy connection failed, attempting direct connection to Ollama:', proxyError.message);
+      
+      // Fall back to direct connection
+      console.log(`Sending request directly to: ${OLLAMA_API_URL}/api/generate`);
+      const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Received response from direct Ollama connection');
+      return response.data.response;
     }
   } catch (error) {
-    console.error('Error analyzing with Ollama:', error);
-    throw new Error(`Ollama API error: ${error.message || 'Unknown error'}`);
+    console.error('Error with Ollama:', error.message);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    }
+    throw new Error(`Failed to communicate with Ollama. Please ensure Ollama is running with the ${model} model installed.`);
   }
 };
 
-// Updated chat with Ollama function
-export const chatWithOllama = async (prompt, context, model) => {
-  if (!model) {
-    throw new Error('No Ollama model specified for chat');
-  }
+const chatWithOllama = async (prompt, context, model) => {
+  // For text-only chat, any model is fine (no need for image-capable model check)
+  console.log(`Chat with Ollama using model: ${model}`);
   
   try {
-    const requestBody = {
+    // Construct the request payload for text chat
+    const payload = {
       model: model,
-      prompt: `${context ? context + '\n\n' : ''}Human: ${prompt}\n\nAssistant:`,
-      stream: false,
+      prompt: context ? `${context}\n\n${prompt}` : prompt,
+      stream: false
     };
-
-    // Try the proxy API endpoint first
+    
+    // First, try to connect through the proxy
     try {
-    const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, requestBody);
-    return response.data.response;
+      console.log(`Sending chat request to proxy endpoint: ${BACKEND_URL}/ollama/api/generate`);
+      
+      const response = await axios.post(`${BACKEND_URL}/ollama/api/generate`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000 // Longer timeout for generation
+      });
+      
+      console.log('Received chat response from Ollama proxy');
+      return response.data.response;
     } catch (proxyError) {
-      // If proxy fails, try direct connection
-      console.warn('Proxy connection failed, trying direct connection:', proxyError.message);
-      const directResponse = await axios.post('http://localhost:11434/api/generate', requestBody);
-      return directResponse.data.response;
+      console.warn('Proxy connection failed, attempting direct connection to Ollama:', proxyError.message);
+      
+      // Fall back to direct connection
+      console.log(`Sending chat request directly to: ${OLLAMA_API_URL}/api/generate`);
+      const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000 // Longer timeout for generation
+      });
+      
+      console.log('Received chat response from direct Ollama connection');
+      return response.data.response;
     }
   } catch (error) {
-    console.error('Error chatting with Ollama:', error);
-    throw new Error(`Ollama API error: ${error.message || 'Unknown error'}`);
+    console.error('Error with Ollama chat:', error.message);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', error.response.data);
+    }
+    throw new Error(`Failed to communicate with Ollama. Please ensure Ollama is running with the ${model} model installed.`);
   }
 };
 
-// Get Ollama models from the Ollama API - updated to handle various API formats
-export const getOllamaModels = async () => {
+const getOllamaModels = async () => {
   try {
-    const ollamaEndpoints = [
-      `${OLLAMA_API_URL}/api/tags`, 
-      'http://localhost:11434/api/tags'
-    ];
-    
-    let models = [];
-    let successfulEndpoint = null;
-    
-    for (const endpoint of ollamaEndpoints) {
-      try {
-        console.log(`Trying to fetch Ollama models from: ${endpoint}`);
-        const response = await axios.get(endpoint);
-        
-        if (response.data) {
-          console.log('Received Ollama response:', response.data);
-          
-          // Handle different response structures
-    if (Array.isArray(response.data.models)) {
-            models = response.data.models;
-            successfulEndpoint = endpoint;
-            break;
-          } else if (response.data.models && typeof response.data.models === 'object') {
-            models = Object.entries(response.data.models).map(([name, details]) => ({
-        name,
-        ...details
-      }));
-            successfulEndpoint = endpoint;
-            break;
-          } else if (Array.isArray(response.data)) {
-            // Some Ollama versions might return a direct array
-            models = response.data;
-            successfulEndpoint = endpoint;
-            break;
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch from ${endpoint}:`, error.message);
+    // First try the proxy
+    try {
+      const response = await axios.get(`${BACKEND_URL}/ollama/api/tags`, {
+        timeout: 5000 // Set timeout to avoid long waits
+      });
+      if (response.data && response.data.models && response.data.models.length > 0) {
+        console.log(`Fetched ${response.data.models.length} Ollama models from proxy`);
+        return response.data.models;
       }
+      throw new Error('No models found');
+    } catch (proxyError) {
+      console.warn('Proxy connection failed, attempting direct connection to Ollama:', proxyError.message);
+      
+      // Fall back to direct connection
+      const response = await axios.get(`${OLLAMA_API_URL}/api/tags`, {
+        timeout: 5000 // Set timeout to avoid long waits
+      });
+      if (response.data && response.data.models && response.data.models.length > 0) {
+        console.log(`Fetched ${response.data.models.length} Ollama models from direct connection`);
+        return response.data.models;
+      }
+      throw new Error('No models found');
     }
-    
-    if (models.length > 0) {
-      console.log(`Successfully fetched ${models.length} Ollama models from ${successfulEndpoint}`);
-      return models;
-    }
-    
-    // Fallback to simulated models if all API calls fail
-    console.log('Using fallback model list - could not connect to Ollama API');
-    await delay(300);
-    return [
-      { name: 'llama3', modified_at: '2023-10-10T10:10:10Z', size: 4200000000, modelfile: { valid: true } },
-      { name: 'mistral', modified_at: '2023-09-15T08:30:00Z', size: 3800000000, modelfile: { valid: true } },
-      { name: 'llava', modified_at: '2023-11-20T14:20:00Z', size: 4800000000, modelfile: { valid: true } }
-    ];
   } catch (error) {
-    console.error('Error fetching Ollama models:', error);
-    return [];
+    console.error('Error fetching Ollama models:', error.message);
+    console.log('Using default models list');
+    // Return default models when connection fails
+    return [
+      // Text models (non-vision)
+      { name: 'llama3', modified_at: new Date().toISOString(), size: 4200000000, tag: 'llama3' },
+      { name: 'mistral', modified_at: new Date().toISOString(), size: 3800000000, tag: 'mistral' },
+      { name: 'phi3', modified_at: new Date().toISOString(), size: 3500000000, tag: 'phi3' },
+      { name: 'gemma', modified_at: new Date().toISOString(), size: 4100000000, tag: 'gemma' },
+      
+      // Vision models (for image analysis)
+      { name: 'llava', modified_at: new Date().toISOString(), size: 4800000000, tag: 'llava' },
+      { name: 'bakllava', modified_at: new Date().toISOString(), size: 4900000000, tag: 'bakllava' }
+    ];
   }
 };
 
-// Validate if a model can handle images
-export const isImageCapableModel = (modelName) => {
+const isImageCapableModel = (modelName) => {
   if (!modelName) return false;
   
-  // In a real app, this would check model capabilities from the API
-  // Common known vision-capable models in Ollama
+  // List of known vision models in Ollama
   const imageModels = [
-    'llava', 'bakllava', 'moondream', 'llava-llama3', 
+    'llava', 'bakllava', 'moondream', 'llava-13b',
     'llava-phi3', 'llava-v1.6-34b', 'cogvlm', 'llava-stable',
     'vision'
   ];
@@ -434,7 +431,7 @@ export const isImageCapableModel = (modelName) => {
   return false;
 };
 
-export default {
+export {
   analyzeImage,
   chatWithAI,
   getOllamaModels,

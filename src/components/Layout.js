@@ -1,15 +1,8 @@
 import React from 'react';
-import { SunIcon, MoonIcon, ComputerDesktopIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useCallback, useState } from 'react';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { GitHubIcon } from './Icons';
 
 const Layout = ({ children, darkMode, toggleDarkMode }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarOpen(prev => !prev);
-  }, []);
-
   return (
     <div className={`min-h-screen pb-16 ${darkMode ? 'bg-neutral-900 text-neutral-100' : 'bg-white text-neutral-900'}`}>
       <header className="border-b border-neutral-800 py-3">

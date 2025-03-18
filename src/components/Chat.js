@@ -11,7 +11,6 @@ import {
   PhotoIcon,
   XMarkIcon,
   CheckIcon,
-  InformationCircleIcon,
   ArrowUpTrayIcon
 } from '@heroicons/react/24/outline';
 
@@ -501,6 +500,11 @@ const Chat = ({
 
   // Modify the formatMessage function to include image info and removal option
   const formatMessage = (content, hasImage, imageData, messageIndex, timestamp) => {
+    // Check if content is undefined and provide a fallback
+    if (content === undefined) {
+      content = 'No content available';
+    }
+    
     // Split the content by code blocks
     const parts = content.split(/(```[\s\S]*?```)/);
     
@@ -741,20 +745,31 @@ const Chat = ({
           </div>
         ) : (
           history.map((message, index) => {
-            // Skip system messages
-            if (message.role === 'system') return null;
+            // Skip empty messages or system messages that should be hidden
+            if (!message || message.role === 'system') {
+              return null;
+            }
+            
+            // Ensure message has required properties
+            const safeMessage = {
+              role: message.role || 'assistant',
+              content: message.content || 'No content available',
+              hasImage: !!message.hasImage,
+              imageData: message.imageData,
+              timestamp: message.timestamp || new Date().toISOString()
+            };
             
             return (
               <div 
                 key={index} 
-                className={`mb-4 ${message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}
+                className={`mb-4 ${safeMessage.role === 'user' ? 'flex justify-end' : 'flex justify-start'}`}
               >
                 <div className={`max-w-3/4 rounded-2xl p-3.5 ${
-                  message.role === 'user' 
+                  safeMessage.role === 'user' 
                     ? 'bg-primary-600 text-white rounded-tr-none'
                     : 'bg-neutral-800 text-neutral-100 rounded-tl-none'
                 }`}>
-                  {formatMessage(message.content, message.hasImage, message.imageData, index, message.timestamp)}
+                  {formatMessage(safeMessage.content, safeMessage.hasImage, safeMessage.imageData, index, safeMessage.timestamp)}
                 </div>
               </div>
             );
@@ -790,7 +805,7 @@ const Chat = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message or paste an image (Ctrl+V)..."
-              className="w-full p-3 pr-10 rounded-xl border border-neutral-700 bg-neutral-800 text-neutral-100 placeholder-neutral-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent scrollbar-styled"
+              className={`w-full p-3 rounded-xl border border-neutral-700 bg-neutral-800 text-neutral-100 placeholder-neutral-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent scrollbar-styled ${selectedCapture ? 'pl-10' : ''}`}
               rows={1}
               style={{ minHeight: '44px', maxHeight: '120px' }}
               onKeyDown={(e) => {
@@ -812,11 +827,12 @@ const Chat = ({
             )}
           </div>
           
-          <div className="flex space-x-2">
+          <div className="flex-shrink-0 flex space-x-2">
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
               className="p-3 rounded-xl bg-primary-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="Send message"
             >
               {isLoading ? (
                 <ArrowPathIcon className="h-5 w-5 animate-spin" />
@@ -829,6 +845,7 @@ const Chat = ({
               type="button"
               onClick={handleClearAllChat}
               className="p-3 rounded-xl bg-neutral-700 text-neutral-300 hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-500"
+              aria-label="Clear chat history"
             >
               <TrashIcon className="h-5 w-5" />
             </button>

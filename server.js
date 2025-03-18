@@ -53,21 +53,106 @@ function detectMimeType(dataUrl) {
 // Ollama routes
 app.get('/ollama/api/tags', async (req, res) => {
   try {
-    const response = await axios.get(`${OLLAMA_API_URL}/api/tags`);
+    console.log(`Attempting to fetch Ollama models from ${OLLAMA_API_URL}/api/tags`);
+    const response = await axios.get(`${OLLAMA_API_URL}/api/tags`, {
+      timeout: 5000 // Set a timeout to avoid long waits
+    });
+    console.log(`Successfully fetched ${response.data.models?.length || 0} Ollama models`);
     res.json(response.data);
   } catch (error) {
     console.error('Error fetching Ollama tags:', error.message);
-    res.status(500).json({ error: 'Failed to fetch Ollama tags' });
+    // Return a structured error response
+    res.status(500).json({ 
+      error: 'Failed to fetch Ollama tags',
+      details: error.message,
+      url: OLLAMA_API_URL,
+      message: `Could not connect to Ollama at ${OLLAMA_API_URL}. Make sure Ollama is running and accessible.`
+    });
   }
 });
 
 app.post('/ollama/api/generate', async (req, res) => {
   try {
-    const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, req.body);
+    const { model, prompt, images } = req.body;
+    console.log(`Sending request to ${OLLAMA_API_URL}/api/generate for model: ${model || 'unknown'}`);
+    
+    // Log detailed debug information
+    console.log(`Request details:
+      - Model: ${model}
+      - Has images: ${!!images && images.length > 0}
+      - Prompt length: ${prompt?.length || 0}
+      - Prompt preview: ${prompt?.substring(0, 100)}...`);
+    
+    // Construct the request payload
+    const payload = {
+      model: model,
+      prompt: prompt,
+      stream: false
+    };
+    
+    // Add images if present
+    if (images && images.length > 0) {
+      payload.images = images;
+      console.log(`Including ${images.length} images in request`);
+      
+      // For image requests, check if model supports vision
+      const isVisionModel = ['llava', 'bakllava', 'cogvlm', 'moondream', 'vision'].some(
+        visionModel => model.toLowerCase().includes(visionModel)
+      );
+      
+      if (!isVisionModel) {
+        console.warn(`WARNING: Model ${model} may not support image analysis. Proceeding anyway, but results may be unpredictable.`);
+      }
+    }
+    
+    console.log('Sending payload to Ollama. Request type:', 
+      images && images.length > 0 ? 'Image analysis' : 'Text chat');
+    
+    const response = await axios.post(`${OLLAMA_API_URL}/api/generate`, payload, {
+      timeout: 120000, // Set a longer timeout for generation (2 minutes)
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.data && response.data.response) {
+      console.log('Successfully received Ollama response');
+      console.log('Response preview:', response.data.response.substring(0, 100) + '...');
+    } else {
+      console.warn('Received empty or invalid response from Ollama');
+    }
+    
     res.json(response.data);
   } catch (error) {
-    console.error('Error generating Ollama response:', error.message);
-    res.status(500).json({ error: 'Failed to generate Ollama response' });
+    console.error('Error generating Ollama response:');
+    console.error('Message:', error.message);
+    if (error.response) {
+      console.error('Status:', error.response.status);
+      console.error('Data:', JSON.stringify(error.response.data));
+    }
+    
+    // Prepare a more descriptive error message
+    let errorMessage = `Could not process request with Ollama at ${OLLAMA_API_URL}.`;
+    
+    if (error.message.includes('ECONNREFUSED')) {
+      errorMessage = `Could not connect to Ollama at ${OLLAMA_API_URL}. Make sure Ollama is running.`;
+    } else if (error.response && error.response.data && error.response.data.error) {
+      // Handle specific Ollama API errors
+      if (error.response.data.error.includes('model not found')) {
+        errorMessage = `Model '${req.body.model}' not found. Please run 'ollama pull ${req.body.model}' to download it.`;
+      } else {
+        errorMessage = `Ollama error: ${error.response.data.error}`;
+      }
+    }
+    
+    // Return a structured error response with useful information
+    res.status(500).json({ 
+      error: 'Failed to generate Ollama response',
+      details: error.message,
+      url: OLLAMA_API_URL,
+      model: req.body.model,
+      message: errorMessage
+    });
   }
 });
 
@@ -164,7 +249,13 @@ app.post('/api/anthropic', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  console.log(`Backend URL: ${process.env.BACKEND_URL || 'http://localhost:5000'}`);
+  console.log(`Ollama API URL: ${OLLAMA_API_URL}`);
   console.log('Anthropic Model:', ANTHROPIC_MODEL);
   console.log('API Keys loaded:');
   console.log('- Anthropic:', process.env.ANTHROPIC_API_KEY ? 'Set' : 'Not set');
+  console.log('\nServer routes:');
+  console.log('- /api/anthropic - Claude API (requires ANTHROPIC_API_KEY)');
+  console.log('- /ollama/api/tags - Get available Ollama models');
+  console.log('- /ollama/api/generate - Generate text with Ollama models');
 });

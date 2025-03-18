@@ -2,7 +2,7 @@
 
 AI Screen Analyzer is a powerful web application that allows users to capture screenshots, analyze them using various AI providers and models, and engage in conversations about the captured images.
 
-
+![Image](https://github.com/user-attachments/assets/997bd717-6f7f-4c83-b0aa-395360ea4698)
 
 ## 🚀 Features
 
@@ -41,6 +41,11 @@ docker-compose up -d --build
 
 Visit http://localhost:3000
 
+Prerequisites:
+- Docker
+- Node.js (v22 or higher)
+- npm
+
 ### Local Setup
 
 1. Clone the repository:
@@ -56,13 +61,10 @@ Visit http://localhost:3000
 
 3. Create a `.env` file in the root directory and add your API keys:
 
-   ```env
-   # OpenAI GPT-4o is used for image analysis and chat
-   # Ollama uses llava for image analysis 
-   
+   ```env 
    REACT_APP_OPENAI_API_KEY=your_openai_api_key
    ANTHROPIC_API_KEY=your_anthropic_api_key
-   ANTHROPIC_MODEL=claude-3-sonnet-20240620
+   ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
    OLLAMA_API_URL=http://localhost:11434
    ```
@@ -74,9 +76,11 @@ Visit http://localhost:3000
 
 5. Open your browser and navigate to `http://localhost:3000`.
 
+![Image](https://github.com/user-attachments/assets/afc1eb69-37d5-4fef-8ed0-c1e00bce4c02)
+
 ## 🧰 Technologies Used
 
-- **Frontend**: React, Tailwind CSS, HeroIcons
+- **Frontend**: React, Tailwind CSS
 - **Backend**: Node.js, Express
 - **AI Services**: OpenAI API, Anthropic API, Ollama
 - **Containerization**: Docker
@@ -86,24 +90,3 @@ Visit http://localhost:3000
 - To change the default Anthropic model, update the `ANTHROPIC_MODEL` variable
 - For Ollama, the default URL is `http://localhost:11434` when running natively, and `host.docker.internal:11434` in Docker
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Contributions to AI Screen Analyzer are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Commit your changes: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature/your-feature-name`
-5. Submit a pull request
-
-## 🙏 Support
-
-If you encounter any problems or have questions, please open an issue in the GitHub repository.
-
----
-
-Made with ❤️ by [bigsk1](https://github.com/bigsk1)
