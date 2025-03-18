@@ -76,7 +76,15 @@ Prerequisites:
 
 5. Open your browser and navigate to `http://localhost:3000`.
 
-![Image](https://github.com/user-attachments/assets/afc1eb69-37d5-4fef-8ed0-c1e00bce4c02)
+<br>
+<br>
+
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/afc1eb69-37d5-4fef-8ed0-c1e00bce4c02" width="350" alt="AI Screen Analyzer">
+  <br>
+  <em>AI Screen Analyzer in action</em>
+</p>
 
 ## 🧰 Technologies Used
 
