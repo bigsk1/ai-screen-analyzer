@@ -11,8 +11,10 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - ANTHROPIC_MODEL=${ANTHROPIC_MODEL}
       - OLLAMA_API_URL=http://host.docker.internal:11434
+      - REACT_APP_BACKEND_URL=http://localhost:5000
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    command: npm run docker

@@ -1,21 +1,169 @@
 /* src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  @apply bg-primary text-white;
+:root {
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-track: rgba(0, 0, 0, 0.1);
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.light {
+  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --scrollbar-track: rgba(0, 0, 0, 0.05);
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply m-0 antialiased bg-neutral-950 text-neutral-100 dark:bg-neutral-950 dark:text-neutral-100;
+    min-height: 100vh;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  :root {
+    --color-primary-50: 240 249 255;
+    --color-primary-100: 224 242 254;
+    --color-primary-200: 186 230 253;
+    --color-primary-300: 125 211 252;
+    --color-primary-400: 56 189 248;
+    --color-primary-500: 14 165 233;
+    --color-primary-600: 2 132 199;
+    --color-primary-700: 3 105 161;
+    --color-primary-800: 7 89 133;
+    --color-primary-900: 12 74 110;
+    --color-primary-950: 8 47 73;
+
+    --color-success-50: 240 253 244;
+    --color-success-100: 220 252 231;
+    --color-success-200: 187 247 208;
+    --color-success-300: 134 239 172;
+    --color-success-400: 74 222 128;
+    --color-success-500: 34 197 94;
+    --color-success-600: 22 163 74;
+    --color-success-700: 21 128 61;
+    --color-success-800: 22 101 52;
+    --color-success-900: 20 83 45;
+    --color-success-950: 5 46 22;
+
+    --color-danger-50: 254 242 242;
+    --color-danger-100: 254 226 226;
+    --color-danger-200: 254 202 202;
+    --color-danger-300: 252 165 165;
+    --color-danger-400: 248 113 113;
+    --color-danger-500: 239 68 68;
+    --color-danger-600: 220 38 38;
+    --color-danger-700: 185 28 28;
+    --color-danger-800: 153 27 27;
+    --color-danger-900: 127 29 29;
+    --color-danger-950: 69 10 10;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 text-white;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-600 hover:bg-secondary-700 focus:ring-secondary-500 text-white;
+  }
+
+  .btn-danger {
+    @apply bg-danger-600 hover:bg-danger-700 focus:ring-danger-500 text-white;
+  }
+
+  .btn-success {
+    @apply bg-success-600 hover:bg-success-700 focus:ring-success-500 text-white;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-neutral-800/50 focus:ring-neutral-500 border border-neutral-700;
+  }
+  
+  .card {
+    @apply bg-neutral-800 rounded-xl shadow-soft p-4 overflow-hidden transition-all;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar */
+  .scrollbar-styled {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  .scrollbar-styled::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-styled::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 4px;
+  }
+
+  .scrollbar-styled::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .dark .glass {
+    @apply bg-black/20 backdrop-blur-md border border-white/10;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .animate-slide-down {
+    animation: slideDown 0.25s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Custom styles */
+.model-selector-dropdown {
+  z-index: 9999 !important;
+  position: fixed !important;
+  max-width: 100vw;
 }
 

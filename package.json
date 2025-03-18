@@ -19,7 +19,8 @@
   "scripts": {
     "start": "react-scripts start",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm start\""
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "docker": "concurrently \"npm run server\" \"REACT_APP_BACKEND_URL=http://localhost:5000 npm start\""
   },
   "eslintConfig": {
     "extends": [
@@ -44,6 +45,5 @@
     "concurrently": "^8.2.2",
     "postcss": "^8.4.14",
     "tailwindcss": "^3.1.6"
-  },
-  "proxy": "http://localhost:5000"
+  }
 }
